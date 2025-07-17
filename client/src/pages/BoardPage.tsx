@@ -4,13 +4,16 @@ import Whiteboard from '../components/Whiteboard';
 import Toolbar from '../components/Toolbar';
 import UserPresence from '../components/UserPresence';
 import { useBoardStore } from '../store/boardStore';
-import { useSocket } from '../hooks/useSocket';
+import useSocket  from '../hooks/useSocket';
 
 const BoardPage: React.FC = () => {
   const { boardId } = useParams<{ boardId: string }>();
   const { initializeBoard, elements, setElements } = useBoardStore();
   const { socket, connected } = useSocket();
 
+  if (!boardId) {
+    return <div className="text-center mt-10">Board ID is required</div>;
+  }
   useEffect(() => {
     if (!boardId || !socket || !connected) return;
 

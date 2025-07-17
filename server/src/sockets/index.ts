@@ -1,8 +1,8 @@
 import { Server } from 'socket.io';
-import { RedisClientType } from 'redis';
-import Board from '../models/Board';
+import { RedisClientType } from '@redis/client';
+import Board from '../models/boards';
 
-const handleSocketEvents = (io: Server, redisClient: RedisClientType) => {
+export default function handleSocketEvents(io: Server, redisClient: RedisClientType) {
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
@@ -36,11 +36,22 @@ const handleSocketEvents = (io: Server, redisClient: RedisClientType) => {
     socket.on('element-create', async (element) => {
       try {
         // Save to database
-        const board = await Board.findById(element.boardId);
-        board.elements.push(element);
-        await board.save();
+        let board = await Board.findById(element.boardId);
+        if (!board) {
+          board = new Board({
+          _id: element.boardId,
+          title: `New Board ${element.boardId.slice(0, 5)}`, // Auto-generate name
+          ownerId: socket.data.userId, // Set creator (from authenticated socket)
+          elements: [element], // Add the first element
+          collaborators: [socket.data.userId] // Creator is collaborator
+          });
+        } else {
+            // 3. Add element to existing board
+            board.elements.push(element);
+          }
         
         // Broadcast to room
+        await board.save();
         socket.to(element.boardId).emit('element-created', element);
       } catch (error) {
         console.error('Element creation error:', error);
@@ -94,5 +105,3 @@ const handleSocketEvents = (io: Server, redisClient: RedisClientType) => {
     });
   });
 };
-
-export default handleSocketEvents;

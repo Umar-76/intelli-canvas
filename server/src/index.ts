@@ -2,13 +2,13 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
-import { createClient } from 'redis';
+import { createClient } from '@redis/client';
 import { createAdapter } from '@socket.io/redis-adapter';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import boardRoutes from './routes/boards';
-import authRoutes from './routes/auth';
-import { handleSocketEvents } from './sockets';
+import boardRoutes from '.\\routes\\boards';
+import authRoutes from '.\\routes\\auth';
+import handleSocketEvents from '.\\sockets\\index';
 
 dotenv.config();
 
