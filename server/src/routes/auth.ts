@@ -7,7 +7,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const authRoutes = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'WTiA6GzMYGe+8gbWW1i2TKXVrQBiDinUbJ4Tai4ue6E=';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set');
+}
 
 // User login endpoint
 authRoutes.post('/login', async (req, res) => {

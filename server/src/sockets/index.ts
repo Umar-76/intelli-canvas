@@ -1,35 +1,70 @@
 import { Server } from 'socket.io';
 import { RedisClientType } from '@redis/client';
 import Board from '../models/boards';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export default function handleSocketEvents(io: Server, redisClient: RedisClientType) {
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
     // Authentication middleware
-    socket.use((packet, next) => {
-      const token = socket.handshake.auth.token;
-      if (!token) return next(new Error('Unauthorized'));
-      // Verify token logic here (JWT verification)
-      next();
+    socket.use(async (packet, next) => {
+      try {
+        const token = socket.handshake.auth.token;
+        if (!token){ 
+          throw new Error('Authentication token missing');
+        }
+        // Verify JWT token
+        const decoded = jwt.verify(token, JWT_SECRET) as unknown as { 
+          userId: string; 
+          email: string 
+        };
+
+        // Attach user data to socket
+        socket.data = {
+          userId: decoded.userId,
+          email: decoded.email,
+          name: decoded.email.split('@')[0] // Default name from email
+        };
+        next();
+      } catch (error) {
+        console.error('Socket auth error:', error.message);
+        next(new Error('Unauthorized'));
+      }
     });
 
     // Join board room
     socket.on('join-board', async (boardId) => {
-      socket.join(boardId);
+      try {
+        socket.join(boardId);
       
-      // Add user to presence tracking
-      await redisClient.hSet(`presence:${boardId}`, socket.id, JSON.stringify({
-        userId: socket.data.userId,
-        name: socket.data.name,
-        position: { x: 0, y: 0 }
-      }));
+        // Add user to presence tracking
+        await redisClient.hSet(`presence:${boardId}`, socket.id, JSON.stringify({
+          userId: socket.data.userId,
+          name: socket.data.name,
+          position: { x: 0, y: 0 },
+          lastActive: new Date().toISOString()
+        }));
 
-      // Broadcast to room
-      io.to(boardId).emit('user-joined', {
-        userId: socket.data.userId,
-        name: socket.data.name
-      });
+        // Broadcast to room
+        io.to(boardId).emit('user-joined', {
+          userId: socket.data.userId,
+          name: socket.data.name
+        });
+        // Send current presence data
+        const presenceData = await redisClient.hGetAll(`presence:${boardId}`);
+        socket.emit('presence-update', Object.values(presenceData).map((str) => JSON.parse(str)));
+
+      } catch (error) {
+        console.error('Join board error:', error);
+      }
     });
 
     // Element creation
@@ -81,27 +116,50 @@ export default function handleSocketEvents(io: Server, redisClient: RedisClientT
     });
 
     // Cursor movement
-    socket.on('cursor-move', (data) => {
-      // Update Redis presence
-      redisClient.hSet(`presence:${data.boardId}`, socket.id, JSON.stringify({
-        userId: socket.data.userId,
-        name: socket.data.name,
-        position: data.position
-      }));
+    socket.on('cursor-move', async (data: {boardId: string, position: {x: number, y: number}}) => {
+      try {
+        // Update Redis presence
+        await redisClient.hSet(`presence:${data.boardId}`, socket.id, JSON.stringify({
+          userId: socket.data.userId,
+          name: socket.data.name,
+          position: data.position
+        }));
 
-      // Broadcast to room
-      socket.to(data.boardId).emit('cursor-moved', {
-        userId: socket.data.userId,
-        position: data.position
-      });
+        // Broadcast to room
+        socket.to(data.boardId).emit('cursor-moved', {
+          userId: socket.data.userId,
+          position: data.position
+        });
+      } catch (error) {
+        console.error('Cursor move error:', error);
+      }
     });
 
     // Handle disconnect
     socket.on('disconnect', async () => {
-      console.log('User disconnected:', socket.id);
-      
-      // Remove from presence tracking (logic to find board IDs)
-      // Broadcast user-left events
+      try {
+        console.log('User disconnected:', socket.id);
+
+        // Get all boards this socket was in
+        const rooms = Array.from(socket.rooms).filter(room => room !== socket.id);
+        
+        // Remove from presence tracking in each room
+        for (const boardId of rooms) {
+          await redisClient.hDel(`presence:${boardId}`, socket.id);
+          
+          // Notify room
+          io.to(boardId).emit('user-left', {
+            userId: socket.data.userId
+          });
+        }
+      } catch (error) {
+        console.error('Disconnect cleanup error:', error);
+      }
+    });
+
+     // --- Error Handling ---
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
     });
   });
 };
