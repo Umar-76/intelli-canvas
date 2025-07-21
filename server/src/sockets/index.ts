@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export default function handleSocketEvents(io: Server, redisClient: RedisClientType) {
-  const JWT_SECRET = process.env.JWT_SECRET;
+  const JWT_SECRET = process.env.JWT_SECRET || 'm8Td++4/WqwoAQiitV5ZQmYteBlxyjVl8fGLob/MnJ4=';
   if (!JWT_SECRET) {
     throw new Error('JWT_SECRET environment variable is not set');
   }
@@ -34,7 +34,7 @@ export default function handleSocketEvents(io: Server, redisClient: RedisClientT
           name: decoded.email.split('@')[0] // Default name from email
         };
         next();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Socket auth error:', error.message);
         next(new Error('Unauthorized'));
       }
