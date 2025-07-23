@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 dotenv.config();
 
@@ -12,6 +13,10 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set');
 }
 
+authRoutes.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000', 
+  credentials: true,
+  exposedHeaders: ['Set-Cookie']}));
 
 // User Registration
 authRoutes.post('/register', async (req, res) => {
@@ -64,7 +69,7 @@ authRoutes.post('/register', async (req, res) => {
         name: savedUser.name,
         email: savedUser.email
       },
-      token
+      token: token
     });
 
   } catch (error) {
@@ -84,9 +89,9 @@ authRoutes.post('/login', async (req, res) => {
     }
 
     // 2. Find user in database
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Invalid user' });
     }
 
     // 3. Verify password
@@ -111,13 +116,13 @@ authRoutes.post('/login', async (req, res) => {
     });
 
     // 6. Return user data (without password)
-    res.json({
+    res.status(201).json({
       user: {
         id: user._id,
         name: user.name,
         email: user.email
       },
-      token // Also return token in response (for mobile/clients that can't use cookies)
+      token: token // Also return token in response (for mobile/clients that can't use cookies)
     });
 
   } catch (error) {

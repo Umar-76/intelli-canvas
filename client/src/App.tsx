@@ -15,8 +15,8 @@ function App() {
       <BrowserRouter>
         <Navbar />
         <Routes>
-          <Route path="/auth" element={<AuthPage />} />
           <Route path="/" element={<HomePage />} />
+          <Route path="/auth" element={<AuthPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/board/:boardId" element={<BoardPage />} />
           </Route>
