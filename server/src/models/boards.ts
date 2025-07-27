@@ -28,7 +28,7 @@ const BoardSchema = new Schema({
   title: { type: String, required: true },
   owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   collaborators: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  elements: [ElementSchema],
+  elements: {type: [ElementSchema], default: []},
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

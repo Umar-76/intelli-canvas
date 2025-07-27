@@ -6,9 +6,12 @@ const useSocket = () => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const socketInstance = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', {
+    const socketInstance = io('http://localhost:5000', {
       autoConnect: true,
-      withCredentials: true
+      withCredentials: true,
+      auth: {
+        token: localStorage.getItem('token')
+      }
     });
 
     socketInstance.on('connect', () => {
@@ -19,12 +22,16 @@ const useSocket = () => {
       setConnected(false);
     });
 
+    socketInstance.on('connect_error', (err) => {
+      console.error('Socket connection error:', err.message);
+    });
+
     setSocket(socketInstance);
 
     return () => {
       socketInstance.disconnect();
     };
-  }, []);
+  }, [localStorage.getItem('token')]);
 
   return { socket, connected };
 };

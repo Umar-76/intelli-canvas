@@ -27,7 +27,7 @@ boardRoutes.post('/', async (req, res) => {
     // Create new board
     const newBoard = new Board({
       title,
-      ownerId,
+      owner: ownerId,
       collaborators: [ownerId], // Owner is automatically a collaborator
       elements: []
     });

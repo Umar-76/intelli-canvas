@@ -76,7 +76,7 @@ export default function handleSocketEvents(io: Server, redisClient: RedisClientT
           board = new Board({
           _id: element.boardId,
           title: `New Board ${element.boardId.slice(0, 5)}`, // Auto-generate name
-          ownerId: socket.data.userId, // Set creator (from authenticated socket)
+          owner: socket.data.userId, // Set creator (from authenticated socket)
           elements: [element], // Add the first element
           collaborators: [socket.data.userId] // Creator is collaborator
           });
