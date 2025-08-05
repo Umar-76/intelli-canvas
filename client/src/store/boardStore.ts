@@ -27,7 +27,7 @@ export const useBoardStore = create<BoardState>((set) => ({
   currentBoardId: null,
   title: '',
   elements: {},
-  selectedTool: 'select',
+  selectedTool: 'Select',
   initializeBoard: (boardData) => set({
     currentBoardId: boardData._id,
     title: boardData.title,

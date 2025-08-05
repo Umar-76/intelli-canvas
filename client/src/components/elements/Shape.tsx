@@ -42,20 +42,20 @@ const Shape: React.FC<{ element: Element }> = ({ element }) => {
       x={element.position.x}
       y={element.position.y}
     >
-      {element.type === 'rectangle' && (
+      {element.type === 'Rect' && (
         <Rect
           {...commonProps}
           width={element.size?.width || 100}
           height={element.size?.height || 60}
         />
       )}
-      {element.type === 'circle' && (
+      {element.type === 'Circle' && (
         <Circle
           {...commonProps}
           radius={element.size?.width ? element.size.width / 2 : 50}
         />
       )}
-      {element.type === 'arrow' && (
+      {element.type === 'Arrow' && (
         <Arrow
           {...commonProps}
           points={[0, 0, element.size?.width || 100, element.size?.height || 50]}

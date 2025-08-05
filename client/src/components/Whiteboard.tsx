@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import Konva from 'konva';
-import { Stage, Layer } from 'react-konva';
+import { Stage, Layer, Line } from 'react-konva';
 import { useBoardStore } from '../store/boardStore';
 import StickyNote from './elements/StickyNote';
 import TextBox from './elements/TextBox';
@@ -11,7 +11,37 @@ const Whiteboard: React.FC = () => {
   const stageRef = useRef<Konva.Stage>(null);
   const { elements, selectedTool, addElement, updateElement } = useBoardStore();
   const isDrawing = useRef(false);
+  const GRID_SIZE = 40;
   const currentDrawingId = useRef<string | null>(null);
+  const renderGrid = () => {
+  const lines = [];
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  for (let i = 0; i < width / GRID_SIZE; i++) {
+    lines.push(
+      <Line
+        key={`v-${i}`}
+        points={[i * GRID_SIZE, 0, i * GRID_SIZE, height]}
+        stroke="#e0e0e0"
+        strokeWidth={1}
+        listening={false}
+      />
+    );
+  }
+  for (let j = 0; j < height / GRID_SIZE; j++) {
+    lines.push(
+      <Line
+        key={`h-${j}`}
+        points={[0, j * GRID_SIZE, width, j * GRID_SIZE]}
+        stroke="#e0e0e0"
+        strokeWidth={1}
+        listening={false}
+      />
+    );
+  }
+  return lines;
+};
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.target !== stageRef.current || selectedTool === 'drawing' || selectedTool === 'eraser') return;
 
@@ -31,7 +61,7 @@ const Whiteboard: React.FC = () => {
   };
 
   const handleDrawingStart = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (selectedTool !== 'drawing' && selectedTool !== 'eraser') return;
+    if (selectedTool !== 'Draw' && selectedTool !== 'Eraser') return;
     
     isDrawing.current = true;
     const { x, y } = stageRef.current?.getPointerPosition() || { x: 0, y: 0 };
@@ -44,8 +74,8 @@ const Whiteboard: React.FC = () => {
       size: { width: 0, height: 0 },
       content: '',
       style: {
-        stroke: selectedTool === 'eraser' ? '#ffffff' : '#000000',
-        strokeWidth: selectedTool === 'eraser' ? 20 : 3
+        stroke: selectedTool === 'Eraser' ? '#ffffff' : '#000000',
+        strokeWidth: selectedTool === 'Eraser' ? 20 : 3
       }
     };
 
@@ -84,19 +114,20 @@ const Whiteboard: React.FC = () => {
       onMouseLeave={handleDrawingEnd}
       className="bg-gray-100"
     >
+      <Layer>{renderGrid()}</Layer>
       <Layer>
         {Object.values(elements).map(element => {
           switch (element.type) {
-            case 'sticky-note':
+            case 'Sticky':
               return <StickyNote key={element.id} element={element} />;
-            case 'text':
+            case 'Text':
               return <TextBox key={element.id} element={element} />;
-            case 'rectangle':
-            case 'circle':
-            case 'arrow':
+            case 'Rect':
+            case 'Circle':
+            case 'Arrow':
               return <Shape key={element.id} element={element} />;
-            case 'drawing':
-            case 'eraser':
+            case 'Draw':
+            case 'Eraser':
               return <FreehandDrawing key={element.id} element={element} />;
             default:
               return null;

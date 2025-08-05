@@ -25,7 +25,7 @@ const FreehandDrawing: React.FC<{ element: Element }> = ({ element }) => {
       lineJoin="round"
       tension={0}
       globalCompositeOperation={
-        element.type === 'eraser' ? 'destination-out' : 'source-over'
+        element.type === 'Eraser' ? 'destination-out' : 'source-over'
       }
       onMouseDown={(e) => {
         isDrawing.current = true;

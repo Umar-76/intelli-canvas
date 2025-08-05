@@ -1,31 +1,44 @@
 import React from 'react';
 import { useBoardStore } from '../store/boardStore';
+import { Tooltip } from '@mui/material';     // or your favorite UI lib
+import { FiMousePointer, FiType, FiSquare, FiCircle, FiArrowRight, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FaStickyNote } from 'react-icons/fa';
+import type { IconType } from 'react-icons';
+import './Toolbar.css';
+
+type Tool = {
+  name: string;
+  Icon: IconType;
+};
+
+const TOOLS: Tool[] = [
+  { name: 'Select', Icon: FiMousePointer },
+  { name: 'Sticky', Icon: FaStickyNote },
+  { name: 'Text',   Icon: FiType },
+  { name: 'Rect',   Icon: FiSquare },
+  { name: 'Circle', Icon: FiCircle },
+  { name: 'Arrow',  Icon: FiArrowRight },
+  { name: 'Draw',   Icon: FiEdit },
+  { name: 'Eraser', Icon: FiTrash2 },
+];
 
 const Toolbar: React.FC = () => {
   const { selectedTool, setSelectedTool } = useBoardStore();
 
-  const tools = [
-    { id: 'select', name: 'Select' },
-    { id: 'sticky-note', name: 'Sticky Note' },
-    { id: 'text', name: 'Text' },
-    { id: 'rectangle', name: 'Rectangle' },
-    { id: 'circle', name: 'Circle' },
-    { id: 'drawing', name: 'Pencil' },
-    { id: 'eraser', name: 'Eraser' },
-  ];
-
   return (
-    <div className="w-16 bg-gray-800 text-white flex flex-col items-center py-4 space-y-4">
-      {tools.map((tool) => (
-        <button
-          key={tool.id}
-          className={`p-2 rounded-lg ${selectedTool === tool.id ? 'bg-blue-500' : 'hover:bg-gray-700'}`}
-          onClick={() => setSelectedTool(tool.id)}
-          title={tool.name}
-        >
-          {tool.name.charAt(0)}
-        </button>
-      ))}
+    <div className="toolbar">
+      <div className = "tool-group">
+        {TOOLS.map(({ name, Icon }) => (
+          <Tooltip key={name} title={name} placement="top">
+            <button
+              className={`tool-button${selectedTool === name ? ' active' : ''}`}
+              onClick={() => setSelectedTool(name)}
+            >
+              <Icon size={20} />
+            </button>
+          </Tooltip>
+        ))}
+      </div>
     </div>
   );
 };
